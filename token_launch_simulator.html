@@ -1,0 +1,512 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Token Launch Simulator - Tokenomics Platform</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            margin: 0;
+            padding: 0;
+            background: linear-gradient(135deg, #0f0f23 0%, #1a1a2e 50%, #16213e 100%);
+            color: white;
+            min-height: 100vh;
+        }
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        .header {
+            text-align: center;
+            padding: 40px 20px;
+            background: rgba(0, 0, 0, 0.3);
+            border-radius: 20px;
+            margin-bottom: 30px;
+            border: 1px solid rgba(153, 69, 255, 0.3);
+        }
+        .header h1 {
+            font-size: 3rem;
+            margin-bottom: 10px;
+            background: linear-gradient(45deg, #9945FF, #14F195);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+        .simulator-section {
+            background: rgba(26, 26, 46, 0.8);
+            border-radius: 15px;
+            padding: 25px;
+            border: 1px solid rgba(153, 69, 255, 0.2);
+            margin-bottom: 30px;
+        }
+        .simulator-section h3 {
+            color: #14F195;
+            margin-bottom: 20px;
+            text-align: center;
+        }
+        .form-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+        .form-group {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+        .form-group label {
+            font-weight: bold;
+            color: #14F195;
+        }
+        .form-group input, .form-group select {
+            padding: 12px;
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            border-radius: 8px;
+            background: rgba(255, 255, 255, 0.1);
+            color: white;
+            font-size: 1rem;
+        }
+        .form-group input:focus, .form-group select:focus {
+            outline: none;
+            border-color: #9945FF;
+            box-shadow: 0 0 10px rgba(153, 69, 255, 0.3);
+        }
+        .btn {
+            background: linear-gradient(45deg, #9945FF, #14F195);
+            color: white;
+            padding: 15px 30px;
+            border: none;
+            border-radius: 25px;
+            cursor: pointer;
+            font-size: 1.1rem;
+            margin: 10px;
+            transition: transform 0.3s ease;
+        }
+        .btn:hover {
+            transform: scale(1.05);
+        }
+        .btn.secondary {
+            background: rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+        }
+        .simulation-buttons {
+            text-align: center;
+            margin: 30px 0;
+        }
+        .results-section {
+            background: rgba(26, 26, 46, 0.8);
+            border-radius: 15px;
+            padding: 25px;
+            border: 1px solid rgba(20, 241, 149, 0.2);
+            margin-bottom: 30px;
+            display: none;
+        }
+        .results-section h3 {
+            color: #14F195;
+            margin-bottom: 20px;
+            text-align: center;
+        }
+        .best-model-highlight {
+            background: linear-gradient(45deg, #9945FF, #14F195);
+            padding: 20px;
+            border-radius: 12px;
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        .best-model-highlight h4 {
+            color: white;
+            margin-bottom: 10px;
+            font-size: 1.5rem;
+        }
+        .best-model-highlight p {
+            color: white;
+            margin: 5px 0;
+            font-size: 1.1rem;
+        }
+        .model-comparison {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+        .model-card {
+            background: rgba(255, 255, 255, 0.05);
+            padding: 20px;
+            border-radius: 10px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            text-align: center;
+        }
+        .model-card.best {
+            border: 2px solid #14F195;
+            box-shadow: 0 0 20px rgba(20, 241, 149, 0.3);
+        }
+        .model-card h4 {
+            color: #9945FF;
+            margin-bottom: 15px;
+        }
+        .model-metric {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 8px;
+            padding: 5px 0;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        .model-metric:last-child {
+            border-bottom: none;
+        }
+        .metric-label {
+            color: #B3B3B3;
+        }
+        .metric-value {
+            color: #14F195;
+            font-weight: bold;
+        }
+        .strategy-recommendations {
+            background: rgba(255, 255, 255, 0.05);
+            padding: 20px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+        }
+        .strategy-recommendations h4 {
+            color: #14F195;
+            margin-bottom: 15px;
+        }
+        .strategy-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 15px;
+        }
+        .strategy-card {
+            background: rgba(0, 0, 0, 0.3);
+            padding: 15px;
+            border-radius: 8px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        .strategy-card h5 {
+            color: #9945FF;
+            margin-bottom: 8px;
+        }
+        .strategy-card p {
+            color: #B3B3B3;
+            font-size: 0.9rem;
+            margin: 5px 0;
+        }
+        .allocation-bar {
+            height: 8px;
+            background: linear-gradient(90deg, #9945FF, #14F195);
+            border-radius: 4px;
+            margin: 8px 0;
+        }
+        .allocation-text {
+            text-align: center;
+            color: #14F195;
+            font-weight: bold;
+            margin-top: 5px;
+        }
+        .loading {
+            text-align: center;
+            padding: 50px;
+            color: #9945FF;
+        }
+        .chart-container {
+            position: relative;
+            height: 300px;
+            margin: 20px 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>Token Launch Simulator</h1>
+            <p>AI-Powered Token Distribution Strategy Optimization</p>
+        </div>
+
+        <div class="simulator-section">
+            <h3>Configure Your Token Launch</h3>
+            <div class="form-grid">
+                <div class="form-group">
+                    <label for="tokenName">Token Name</label>
+                    <input type="text" id="tokenName" placeholder="MyToken" value="MyToken">
+                </div>
+                <div class="form-group">
+                    <label for="totalSupply">Total Supply</label>
+                    <input type="number" id="totalSupply" placeholder="1000000" value="1000000" min="1000">
+                </div>
+                <div class="form-group">
+                    <label for="targetMarketCap">Target Market Cap ($)</label>
+                    <input type="number" id="targetMarketCap" placeholder="10000000" value="10000000" min="1000">
+                </div>
+                <div class="form-group">
+                    <label for="launchDuration">Launch Duration (days)</label>
+                    <input type="number" id="launchDuration" placeholder="30" value="30" min="1" max="365">
+                </div>
+                <div class="form-group">
+                    <label for="riskPreference">Risk Preference</label>
+                    <select id="riskPreference">
+                        <option value="conservative">Conservative</option>
+                        <option value="moderate" selected>Moderate</option>
+                        <option value="aggressive">Aggressive</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="marketCondition">Market Condition</label>
+                    <select id="marketCondition">
+                        <option value="bull">Bull Market</option>
+                        <option value="bear">Bear Market</option>
+                        <option value="sideways" selected>Sideways</option>
+                        <option value="volatile">High Volatility</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="expectedUsers">Expected Users</label>
+                    <input type="number" id="expectedUsers" placeholder="1000" value="1000" min="10">
+                </div>
+                <div class="form-group">
+                    <label for="fraudRisk">Fraud Risk Level</label>
+                    <select id="fraudRisk">
+                        <option value="low">Low</option>
+                        <option value="medium" selected>Medium</option>
+                        <option value="high">High</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="simulation-buttons">
+                <button class="btn" onclick="runSimulation()">Run AI Simulation</button>
+                <button class="btn secondary" onclick="resetForm()">Reset</button>
+            </div>
+        </div>
+
+        <div id="resultsSection" class="results-section">
+            <h3>AI Simulation Results</h3>
+
+            <div id="bestModelSection" class="best-model-highlight">
+                <!-- Best model results will be inserted here -->
+            </div>
+
+            <div class="model-comparison" id="modelComparison">
+                <!-- Model comparison will be inserted here -->
+            </div>
+
+            <div class="strategy-recommendations">
+                <h4>Recommended Token Distribution Strategies</h4>
+                <div class="strategy-grid" id="strategyGrid">
+                    <!-- Strategy recommendations will be inserted here -->
+                </div>
+            </div>
+
+            <div class="chart-container">
+                <canvas id="distributionChart"></canvas>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let distributionChart = null;
+
+        // Initialize chart
+        function initChart() {
+            const ctx = document.getElementById('distributionChart').getContext('2d');
+            distributionChart = new Chart(ctx, {
+                type: 'doughnut',
+                data: {
+                    labels: [],
+                    datasets: [{
+                        data: [],
+                        backgroundColor: [
+                            '#9945FF', '#14F195', '#FFC107', '#FF5722',
+                            '#2196F3', '#4CAF50', '#FF9800', '#9C27B0'
+                        ],
+                        borderWidth: 2,
+                        borderColor: 'rgba(255, 255, 255, 0.3)'
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            position: 'bottom',
+                            labels: {
+                                color: 'white',
+                                padding: 20,
+                                font: {
+                                    size: 12
+                                }
+                            }
+                        },
+                        title: {
+                            display: true,
+                            text: 'Optimal Token Distribution Allocation',
+                            color: '#14F195',
+                            font: {
+                                size: 16,
+                                weight: 'bold'
+                            }
+                        }
+                    }
+                }
+            });
+        }
+
+        async function runSimulation() {
+            // Show loading
+            document.getElementById('resultsSection').style.display = 'block';
+            document.getElementById('bestModelSection').innerHTML = '<div class="loading">Running AI simulation...</div>';
+            document.getElementById('modelComparison').innerHTML = '';
+            document.getElementById('strategyGrid').innerHTML = '';
+
+            try {
+                // Get form data
+                const tokenData = {
+                    name: document.getElementById('tokenName').value,
+                    total_supply: parseInt(document.getElementById('totalSupply').value),
+                    target_market_cap: parseInt(document.getElementById('targetMarketCap').value),
+                    launch_duration: parseInt(document.getElementById('launchDuration').value),
+                    risk_preference: document.getElementById('riskPreference').value,
+                    market_condition: document.getElementById('marketCondition').value,
+                    expected_users: parseInt(document.getElementById('expectedUsers').value),
+                    fraud_risk: document.getElementById('fraudRisk').value
+                };
+
+                // Run RL optimization with simulation parameters
+                const rlResponse = await fetch('http://127.0.0.1:3000/api/v1/rl/optimize', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        fraud_probabilities: getFraudProbabilities(tokenData.fraud_risk),
+                        model_type: 'ensemble',
+                        risk_preference: tokenData.risk_preference,
+                        token_supply: tokenData.total_supply,
+                        target_market_cap: tokenData.target_market_cap,
+                        launch_duration: tokenData.launch_duration,
+                        market_condition: tokenData.market_condition,
+                        expected_users: tokenData.expected_users
+                    })
+                });
+
+                const rlData = await rlResponse.json();
+
+                // Get tokenomics strategies
+                const tokenomicsResponse = await fetch('http://127.0.0.1:3000/api/v1/tokenomics/distribution-strategies', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        simulation_context: {
+                            mode: 'predictive',
+                            risk_preference: tokenData.risk_preference,
+                            market_condition: tokenData.market_condition,
+                            user_count: tokenData.expected_users,
+                            fraud_risk: tokenData.fraud_risk
+                        }
+                    })
+                });
+
+                const tokenomicsData = await tokenomicsResponse.json();
+
+                // Display results
+                displayResults(rlData, tokenomicsData, tokenData);
+
+            } catch (error) {
+                console.error('Simulation error:', error);
+                document.getElementById('bestModelSection').innerHTML =
+                    '<div class="loading" style="color: #f44336;">Error running simulation. Please try again.</div>';
+            }
+        }
+
+        function getFraudProbabilities(riskLevel) {
+            const riskMap = {
+                'low': [0.05, 0.08, 0.03, 0.12, 0.06],
+                'medium': [0.1, 0.15, 0.08, 0.22, 0.12],
+                'high': [0.25, 0.35, 0.2, 0.45, 0.3]
+            };
+            return riskMap[riskLevel] || riskMap['medium'];
+        }
+
+        function displayResults(rlData, tokenomicsData, tokenData) {
+            // Display best model
+            const bestModel = rlData.best_model || 'PPO';
+            const bestMetrics = rlData.model_performance[bestModel.toLowerCase()] || {};
+
+            document.getElementById('bestModelSection').innerHTML = `
+                <h4>Best Model: ${bestModel}</h4>
+                <p><strong>Confidence:</strong> ${(rlData.confidence * 100).toFixed(1)}%</p>
+                <p><strong>Reward Score:</strong> ${bestMetrics.reward || 'N/A'}</p>
+                <p><strong>Stability:</strong> ${bestMetrics.stability ? (bestMetrics.stability * 100).toFixed(1) + '%' : 'N/A'}</p>
+                <p><strong>Recommended for ${tokenData.name} launch</strong></p>
+            `;
+
+            // Display model comparison
+            const modelComparisonHTML = Object.entries(rlData.model_performance || {}).map(([model, metrics]) => `
+                <div class="model-card ${model.toUpperCase() === bestModel ? 'best' : ''}">
+                    <h4>${model.toUpperCase()}</h4>
+                    <div class="model-metric">
+                        <span class="metric-label">Reward:</span>
+                        <span class="metric-value">${metrics.reward ? metrics.reward.toFixed(0) : 'N/A'}</span>
+                    </div>
+                    <div class="model-metric">
+                        <span class="metric-label">Stability:</span>
+                        <span class="metric-value">${metrics.stability ? (metrics.stability * 100).toFixed(0) + '%' : 'N/A'}</span>
+                    </div>
+                    <div class="model-metric">
+                        <span class="metric-label">Conv Time:</span>
+                        <span class="metric-value">${metrics.convergence_time ? metrics.convergence_time.toFixed(0) + 's' : 'N/A'}</span>
+                    </div>
+                    <div class="model-metric">
+                        <span class="metric-label">Efficiency:</span>
+                        <span class="metric-value">${metrics.sample_efficiency ? (metrics.sample_efficiency * 100).toFixed(0) + '%' : 'N/A'}</span>
+                    </div>
+                </div>
+            `).join('');
+
+            document.getElementById('modelComparison').innerHTML = modelComparisonHTML;
+
+            // Display strategy recommendations
+            const strategies = tokenomicsData.strategies || [];
+            const strategyHTML = strategies.slice(0, 6).map(strategy => `
+                <div class="strategy-card">
+                    <h5>${strategy.name}</h5>
+                    <p><strong>Description:</strong> ${strategy.description}</p>
+                    <p><strong>AI Improvement:</strong> ${strategy.ai_improvement}</p>
+                    <div class="allocation-bar" style="width: ${strategy.allocation_percentage * 2}px;"></div>
+                    <div class="allocation-text">${strategy.allocation_percentage}% Allocation</div>
+                    <p><strong>Confidence:</strong> ${(strategy.confidence_score * 100).toFixed(0)}%</p>
+                </div>
+            `).join('');
+
+            document.getElementById('strategyGrid').innerHTML = strategyHTML;
+
+            // Update chart
+            if (distributionChart) {
+                const topStrategies = strategies.slice(0, 6);
+                distributionChart.data.labels = topStrategies.map(s => s.name.split(' ')[0]);
+                distributionChart.data.datasets[0].data = topStrategies.map(s => s.allocation_percentage);
+                distributionChart.update();
+            }
+        }
+
+        function resetForm() {
+            document.getElementById('tokenName').value = 'MyToken';
+            document.getElementById('totalSupply').value = '1000000';
+            document.getElementById('targetMarketCap').value = '10000000';
+            document.getElementById('launchDuration').value = '30';
+            document.getElementById('riskPreference').value = 'moderate';
+            document.getElementById('marketCondition').value = 'sideways';
+            document.getElementById('expectedUsers').value = '1000';
+            document.getElementById('fraudRisk').value = 'medium';
+
+            document.getElementById('resultsSection').style.display = 'none';
+        }
+
+        // Initialize on page load
+        document.addEventListener('DOMContentLoaded', function() {
+            initChart();
+        });
+    </script>
+</body>
+</html>

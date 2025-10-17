@@ -1,0 +1,471 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Interactive Suspicious Nodes Network</title>
+    <script src="https://d3js.org/d3.v7.min.js"></script>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            margin: 0;
+            padding: 0;
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
+            color: white;
+            min-height: 100vh;
+        }
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        .header {
+            text-align: center;
+            padding: 40px 20px;
+            background: rgba(0, 0, 0, 0.3);
+            border-radius: 20px;
+            margin-bottom: 30px;
+            border: 1px solid rgba(153, 69, 255, 0.3);
+        }
+        .header h1 {
+            font-size: 3rem;
+            margin-bottom: 10px;
+            background: linear-gradient(45deg, #9945FF, #14F195);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+        .network-container {
+            background: rgba(26, 26, 46, 0.8);
+            border-radius: 15px;
+            padding: 25px;
+            border: 1px solid rgba(153, 69, 255, 0.2);
+            backdrop-filter: blur(10px);
+            margin-bottom: 30px;
+        }
+        .network-container h3 {
+            color: #14F195;
+            margin-bottom: 20px;
+            text-align: center;
+        }
+        #network {
+            width: 100%;
+            height: 600px;
+            background: rgba(0, 0, 0, 0.2);
+            border-radius: 10px;
+        }
+        .controls {
+            display: flex;
+            justify-content: center;
+            gap: 20px;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+        }
+        .control-group {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .control-group label {
+            color: #B3B3B3;
+            font-size: 0.9rem;
+        }
+        .control-group select, .control-group input {
+            background: rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 5px;
+            color: white;
+            padding: 5px 10px;
+        }
+        .control-group select option {
+            background: #1a1a2e;
+            color: white;
+        }
+        .legend {
+            display: flex;
+            justify-content: center;
+            flex-wrap: wrap;
+            gap: 20px;
+            margin-top: 20px;
+        }
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 0.9rem;
+        }
+        .legend-color {
+            width: 16px;
+            height: 16px;
+            border-radius: 50%;
+        }
+        .node-details {
+            background: rgba(26, 26, 46, 0.8);
+            border-radius: 15px;
+            padding: 20px;
+            border: 1px solid rgba(20, 241, 149, 0.2);
+            margin-top: 20px;
+        }
+        .node-details h4 {
+            color: #14F195;
+            margin-bottom: 15px;
+        }
+        .node-info {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+        }
+        .info-item {
+            background: rgba(255, 255, 255, 0.05);
+            padding: 10px;
+            border-radius: 8px;
+        }
+        .info-item strong {
+            color: #9945FF;
+        }
+        .btn {
+            background: linear-gradient(45deg, #9945FF, #14F195);
+            color: white;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 20px;
+            cursor: pointer;
+            font-size: 0.9rem;
+            margin: 5px;
+            transition: transform 0.3s ease;
+        }
+        .btn:hover {
+            transform: scale(1.05);
+        }
+        .loading {
+            text-align: center;
+            padding: 50px;
+            color: #9945FF;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>Interactive Suspicious Nodes Network</h1>
+            <p>GNN-Powered Fraud Detection Visualization</p>
+            <button class="btn" onclick="loadNetworkData()">🔄 Load Network Data</button>
+        </div>
+
+        <div class="network-container">
+            <h3>Transaction Network Graph</h3>
+
+            <div class="controls">
+                <div class="control-group">
+                    <label for="layout">Layout:</label>
+                    <select id="layout">
+                        <option value="force">Force Directed</option>
+                        <option value="circular">Circular</option>
+                        <option value="grid">Grid</option>
+                    </select>
+                </div>
+                <div class="control-group">
+                    <label for="nodeSize">Node Size:</label>
+                    <select id="nodeSize">
+                        <option value="connections">Connections</option>
+                        <option value="fraud_prob">Fraud Probability</option>
+                        <option value="fixed">Fixed</option>
+                    </select>
+                </div>
+                <div class="control-group">
+                    <label for="showLabels">Show Labels:</label>
+                    <input type="checkbox" id="showLabels" checked>
+                </div>
+                <div class="control-group">
+                    <label for="minFraudProb">Min Fraud Prob:</label>
+                    <input type="range" id="minFraudProb" min="0" max="1" step="0.1" value="0">
+                    <span id="minProbValue">0.0</span>
+                </div>
+            </div>
+
+            <div id="network"></div>
+
+            <div class="legend">
+                <div class="legend-item">
+                    <div class="legend-color" style="background: #ff4444;"></div>
+                    <span>High Risk Nodes</span>
+                </div>
+                <div class="legend-item">
+                    <div class="legend-color" style="background: #ff8800;"></div>
+                    <span>Medium Risk Nodes</span>
+                </div>
+                <div class="legend-item">
+                    <div class="legend-color" style="background: #44aa44;"></div>
+                    <span>Low Risk Nodes</span>
+                </div>
+                <div class="legend-item">
+                    <div class="legend-color" style="background: #666666;"></div>
+                    <span>Connected Nodes</span>
+                </div>
+                <div class="legend-item">
+                    <span>Edge thickness = Connection strength</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="node-details" id="nodeDetails" style="display: none;">
+            <h4>🔍 Node Details</h4>
+            <div class="node-info" id="nodeInfo"></div>
+        </div>
+    </div>
+
+    <script>
+        let svg, simulation, nodes = [], links = [];
+        let selectedNode = null;
+
+        // Initialize the network visualization
+        function initNetwork() {
+            const width = document.getElementById('network').clientWidth;
+            const height = 600;
+
+            // Clear existing SVG
+            d3.select('#network').selectAll('*').remove();
+
+            svg = d3.select('#network')
+                .append('svg')
+                .attr('width', width)
+                .attr('height', height);
+
+            // Add zoom behavior
+            const zoom = d3.zoom()
+                .scaleExtent([0.1, 4])
+                .on('zoom', function(event) {
+                    svg.selectAll('g').attr('transform', event.transform);
+                });
+
+            svg.call(zoom);
+
+            // Create main group
+            const g = svg.append('g');
+
+            // Add links
+            const link = g.append('g')
+                .attr('class', 'links')
+                .selectAll('line')
+                .data(links)
+                .enter().append('line')
+                .attr('stroke', '#999')
+                .attr('stroke-opacity', 0.6)
+                .attr('stroke-width', d => Math.sqrt(d.value) * 2);
+
+            // Add nodes
+            const node = g.append('g')
+                .attr('class', 'nodes')
+                .selectAll('circle')
+                .data(nodes)
+                .enter().append('circle')
+                .attr('r', d => getNodeSize(d))
+                .attr('fill', d => d.color)
+                .attr('stroke', '#fff')
+                .attr('stroke-width', 2)
+                .style('cursor', 'pointer')
+                .call(d3.drag()
+                    .on('start', dragstarted)
+                    .on('drag', dragged)
+                    .on('end', dragended))
+                .on('click', showNodeDetails)
+                .on('mouseover', function(event, d) {
+                    d3.select(this)
+                        .transition()
+                        .duration(200)
+                        .attr('r', getNodeSize(d) * 1.5);
+                })
+                .on('mouseout', function(event, d) {
+                    d3.select(this)
+                        .transition()
+                        .duration(200)
+                        .attr('r', getNodeSize(d));
+                });
+
+            // Add labels
+            const labels = g.append('g')
+                .attr('class', 'labels')
+                .selectAll('text')
+                .data(nodes)
+                .enter().append('text')
+                .text(d => document.getElementById('showLabels').checked ? d.name : '')
+                .attr('font-family', 'Arial')
+                .attr('font-size', '10px')
+                .attr('fill', '#fff')
+                .attr('text-anchor', 'middle')
+                .attr('dy', '.35em')
+                .style('pointer-events', 'none')
+                .style('user-select', 'none');
+
+            // Create force simulation
+            simulation = d3.forceSimulation(nodes)
+                .force('link', d3.forceLink(links).id(d => d.id).distance(100).strength(0.1))
+                .force('charge', d3.forceManyBody().strength(-300))
+                .force('center', d3.forceCenter(width / 2, height / 2))
+                .force('x', d3.forceX(width / 2).strength(0.1))
+                .force('y', d3.forceY(height / 2).strength(0.1))
+                .on('tick', ticked);
+
+            function ticked() {
+                link
+                    .attr('x1', d => d.source.x)
+                    .attr('y1', d => d.source.y)
+                    .attr('x2', d => d.target.x)
+                    .attr('y2', d => d.target.y);
+
+                node
+                    .attr('cx', d => d.x)
+                    .attr('cy', d => d.y);
+
+                labels
+                    .attr('x', d => d.x)
+                    .attr('y', d => d.y);
+            }
+
+            function dragstarted(event, d) {
+                if (!event.active) simulation.alphaTarget(0.3).restart();
+                d.fx = d.x;
+                d.fy = d.y;
+            }
+
+            function dragged(event, d) {
+                d.fx = event.x;
+                d.fy = event.y;
+            }
+
+            function dragended(event, d) {
+                if (!event.active) simulation.alphaTarget(0);
+                d.fx = null;
+                d.fy = null;
+            }
+
+            // Update layout when changed
+            d3.select('#layout').on('change', updateLayout);
+            d3.select('#nodeSize').on('change', updateNodeSizes);
+            d3.select('#showLabels').on('change', updateLabels);
+            d3.select('#minFraudProb').on('input', updateMinProb);
+
+            function updateLayout() {
+                const layout = d3.select('#layout').property('value');
+
+                if (layout === 'circular') {
+                    const radius = Math.min(width, height) / 3;
+                    nodes.forEach((d, i) => {
+                        const angle = (i / nodes.length) * 2 * Math.PI;
+                        d.x = width / 2 + radius * Math.cos(angle);
+                        d.y = height / 2 + radius * Math.sin(angle);
+                    });
+                } else if (layout === 'grid') {
+                    const cols = Math.ceil(Math.sqrt(nodes.length));
+                    nodes.forEach((d, i) => {
+                        d.x = ((i % cols) / cols) * width + width / (cols * 2);
+                        d.y = (Math.floor(i / cols) / Math.ceil(nodes.length / cols)) * height + height / (Math.ceil(nodes.length / cols) * 2);
+                    });
+                }
+
+                simulation.alpha(0.3).restart();
+            }
+
+            function updateNodeSizes() {
+                node.attr('r', d => getNodeSize(d));
+            }
+
+            function updateLabels() {
+                labels.text(d => document.getElementById('showLabels').checked ? d.name : '');
+            }
+
+            function updateMinProb() {
+                const minProb = +d3.select('#minFraudProb').property('value');
+                d3.select('#minProbValue').text(minProb.toFixed(1));
+
+                // Filter nodes based on minimum fraud probability
+                const visibleNodes = nodes.filter(d => d.fraud_prob >= minProb);
+                const visibleLinks = links.filter(d =>
+                    visibleNodes.find(n => n.id === d.source.id) &&
+                    visibleNodes.find(n => n.id === d.target.id)
+                );
+
+                // Update visualization
+                node.style('opacity', d => d.fraud_prob >= minProb ? 1 : 0.1);
+                link.style('opacity', d =>
+                    visibleNodes.find(n => n.id === d.source.id) &&
+                    visibleNodes.find(n => n.id === d.target.id) ? 0.6 : 0.1
+                );
+            }
+        }
+
+        function getNodeSize(d) {
+            const sizeType = d3.select('#nodeSize').property('value');
+            switch (sizeType) {
+                case 'connections':
+                    return Math.max(5, Math.min(20, d.connections / 2));
+                case 'fraud_prob':
+                    return Math.max(5, Math.min(20, d.fraud_prob * 15));
+                case 'fixed':
+                default:
+                    return 8;
+            }
+        }
+
+        function showNodeDetails(event, d) {
+            selectedNode = d;
+            const detailsDiv = document.getElementById('nodeDetails');
+            const infoDiv = document.getElementById('nodeInfo');
+
+            infoDiv.innerHTML = `
+                <div class="info-item"><strong>Node ID:</strong> ${d.id}</div>
+                <div class="info-item"><strong>Name:</strong> ${d.name}</div>
+                <div class="info-item"><strong>Fraud Probability:</strong> ${(d.fraud_prob * 100).toFixed(2)}%</div>
+                <div class="info-item"><strong>Connections:</strong> ${d.connections}</div>
+                <div class="info-item"><strong>Risk Level:</strong> ${d.risk_level || 'Unknown'}</div>
+                <div class="info-item"><strong>Cluster:</strong> ${d.cluster}</div>
+                <div class="info-item"><strong>Group:</strong> ${d.group}</div>
+            `;
+
+            detailsDiv.style.display = 'block';
+            detailsDiv.scrollIntoView({ behavior: 'smooth' });
+        }
+
+        async function loadNetworkData() {
+            try {
+                document.getElementById('network').innerHTML = '<div class="loading">Loading network data...</div>';
+
+                const response = await fetch('http://127.0.0.1:3000/api/v1/fraud/suspicious-nodes', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        limit: 20,
+                        include_graph: true
+                    })
+                });
+
+                const data = await response.json();
+
+                if (data.graph_data) {
+                    nodes = data.graph_data.nodes;
+                    links = data.graph_data.links;
+
+                    // Convert link references to actual node objects
+                    links.forEach(link => {
+                        link.source = nodes.find(n => n.id === link.source);
+                        link.target = nodes.find(n => n.id === link.target);
+                    });
+
+                    initNetwork();
+                } else {
+                    document.getElementById('network').innerHTML = '<div class="loading">No network data available</div>';
+                }
+
+            } catch (error) {
+                console.error('Error loading network data:', error);
+                document.getElementById('network').innerHTML = '<div class="loading">Error loading network data. Check console for details.</div>';
+            }
+        }
+
+        // Initialize on page load
+        document.addEventListener('DOMContentLoaded', function() {
+            loadNetworkData();
+        });
+    </script>
+</body>
+</html>
