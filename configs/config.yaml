@@ -1,0 +1,27 @@
+project:
+  name: tokenomics-rl
+  data_dir: C:\\Harshitha\\FinalProject\\data
+
+api:
+  host: 127.0.0.1
+  port: 8000
+
+elliptic:
+  csv_dir: C:\\Harshitha\\FinalProject\\data\\elliptic
+  graph_file: graph_edges.csv
+  features_file: elliptic_txs_features.csv
+  classes_file: elliptic_txs_classes.csv
+
+rl:
+  max_steps: 365
+  action_space_dim: 6
+  reward_weights:
+    price_stability: 0.4
+    fairness: 0.3
+    adoption: 0.3
+
+forecast:
+  lookback: 60
+  horizon: 7
+  ticker: BTC-USD
+
