@@ -76,6 +76,7 @@ tokenomics-platform/
 │       ├── dqn_crypto_opt.zip
 │       ├── ppo_crypto_opt.zip
 │       └── sac_crypto_opt.zip
+├── gnn/                           #Graphical Neural Network
 ├── dashboard/                    # Streamlit dashboards
 ├── data/                         # Datasets (Elliptic for GNN)
 ├── configs/                      # Configuration files
