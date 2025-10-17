@@ -7,7 +7,7 @@ A comprehensive AI-powered platform for token distribution optimization, featuri
 ### Step 1: Clone and Setup
 ```bash
 # Clone the repository
-git clone <your-repo-url>
+git clone https://github.com/harshi1707/Tokenomics.git
 cd tokenomics-platform
 
 # Run automated setup (recommended)
@@ -33,7 +33,7 @@ venv\Scripts\activate
 source venv/bin/activate
 
 # The pre-trained models are located in:
-# rl/saved_models/
+# rl/
 # - a3c_crypto_opt.zip
 # - dqn_crypto_opt.zip
 # - ppo_crypto_opt.zip
@@ -71,7 +71,7 @@ tokenomics-platform/
 │   ├── forecasting_service.py
 │   └── coingecko_service.py
 ├── rl/                           # Reinforcement Learning
-│   └── saved_models/            # Pre-trained RL models
+│   └── # Pre-trained RL models
 │       ├── a3c_crypto_opt.zip
 │       ├── dqn_crypto_opt.zip
 │       ├── ppo_crypto_opt.zip
